@@ -1,39 +1,7 @@
-import numpy as np
 import pytest
 
+from input_function import generate_length
 
-#def test_length(length_parameter):
-#    length=length_parameter
-#    assert length > 0
-
-def generate_length():
-    print('\nInsert length:')
-    for i in range(3):
-        length_string=input()
-        if length_string.isnumeric():
-            length=int(length_string)
-            if length>0:
-                break
-        print('\nInvalid number. Must be a positive number\n')
-    return length_string
-
-def generate_generations():
-    print('Insert number of generations:')
-    for i in range(3):
-        ngen_string=input()
-        if ngen_string.isnumeric():
-            ngen=int(ngen_string)
-            if ngen>1:
-                break
-        print('\nInvalid number. Must be a positive number greater than 1\n')
-    return ngen_string
-
-def valid_length(length_string):
-    valid = False
-    if length_string.isnumeric():
-        if int(length_string)>0:
-            valid = True
-    return valid
 
 def valid_gen(ngen_string):
     valid = False
@@ -42,66 +10,96 @@ def valid_gen(ngen_string):
             valid = True
     return valid
 
-def valid_parameters(length_string, ngen_string):
-    valid=False
-    if valid_length(length_string) and valid_gen(ngen_string):
-        valid = True
-    return valid
-
 def generate_positions(length):
     mid_position=int(length/2)
     one_positions=([mid_position, ])
     return one_positions
 
-def initialization(input_length, one_positions):
-    length=int(input_length)
-    initial_state=np.zeros(length)
-    for i in range(len(one_positions)):
-        initial_state[one_positions[i]] = 1
+def initialization(length, one_positions):
+    initial_state=['0']*length
+    for j in range(len(one_positions)):
+            initial_state[one_positions[j]] = '1'
+    assert (set(initial_state)=={'1', '0'})
     return initial_state
+def is_valid_state(state):
+    return set(state) == {'1', '0'}
+
+def test_initialization():
+    length = 5
+    mid_position = int(length/2)
+    one_positions = ([mid_position, ])
+    state = initialization(length, one_positions)
+    assert is_valid_state(state)
 
 def evolution(old_state):
-    new_state=np.zeros(len(old_state))
+    new_state=['0']*length
     for i in range(len(old_state)):
         if i==0:
-            if old_state[i+1]==0:
-                new_state[i] = 0
-            else:
-                new_state[i] = 1
-        elif i==len(old_state)-1:
-            if old_state[i-1]==old_state[i]:
-                new_state[i] = 0
-            else:
-                new_state[i] = 1
+            new_state[i]=left_corner_evolution(old_state[i+1])
+        elif i==(len(old_state)-1):
+            new_state[i]=right_corner_evolution(old_state, i)
         else:
-            if (old_state[i]<1 and (old_state[i-1]==old_state[i+1])) or (
-                old_state[i-1]>0 and old_state[i]>0):
-                    new_state[i] = 0
-            else:
-                new_state[i] = 1
+            new_state[i]=body_evolution(old_state, i)
     return new_state
 
+def left_corner_evolution(old_state_value):
+    if old_state_value=='0':
+        new_state_value = '0'
+    else:
+        new_state_value = '1'
+    return new_state_value
+
+def right_corner_evolution(old_state, i):
+    if old_state[i-1]==old_state[i]:
+        new_state_value= '0'
+    else:
+        new_state_value= '1'
+    return new_state_value
+
+def body_evolution(old_state, i):
+    if (old_state[i]=='0' and (old_state[i-1]==old_state[i+1])) or (
+        old_state[i-1]=='1' and old_state[i]=='1'):
+            new_state_value = '0'
+    else:
+        new_state_value = '1'
+    return new_state_value
+
+@pytest.fixture
+def valid_state():
+    length = 5
+    mid_position = int(length/2)
+    one_positions = ([mid_position, ])
+    return initialization(length, one_positions)
+
+def test_evolution(valid_state):
+    state=evolution(valid_state)
+    assert is_valid_state(state)
+
+def print_state(state):
+    for i in range(len(state)):
+        if state[i]=='0':
+            print('_', end='')
+        else:
+            print('@', end='')
+    print('\n', end='') #end= otherwise double enter
+
 def simulation(initial_state, ngen):
-     state=initial_state
-     print('\nOutput:')
-     print(state)
-     for i in range(ngen):
-          state=evolution(state)
-          print(state)
+    state=initial_state
+    print('\nOutput:')
+    print_state(state)
+    for i in range(ngen-1):
+        state=evolution(state)
+        print_state(state)
 
 
-length_string=generate_length()
-ngen_string=generate_generations()
-if valid_parameters(length_string, ngen_string):
-    length=int(length_string)
-    ngen=int(ngen_string)
+ngen_string=generate_length()
+if valid_gen(ngen_string):
+    ngen = int(ngen_string)
+    length=2*ngen - 1
     one_positions=generate_positions(length)
     initial_state = initialization(length, one_positions)
     simulation(initial_state, ngen)
 else:
-    print('\nInvalid input parameter(s). Try again\n')
+    print('Invalid input parameter. \nAbort. \nTry again')
 
-
-#tests
-#better symbols
-#(dictionaries?)
+#writing in modo bello
