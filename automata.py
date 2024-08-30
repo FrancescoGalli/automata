@@ -1,4 +1,4 @@
-"""Python program to generate a rule30 evolution with a user-defined
+"""Python program to generate a rule30 evolution with a certain
 number of generation"""
 import pytest
 
